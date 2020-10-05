@@ -1,0 +1,16 @@
+input size of red point set 
+ red>>p1>>input size of blue point set 
+ blue>>p1>>p2>>input size of interval set 
+ interval>>in_interval1
+one>>the other>>in_interval2
+one>>the other>>in_interval3
+one>>the other>>
+ << interval1 >> : 2.6 to 5.7
+1 
+
+ << interval2 >> : 6.8 to 9.7
+
+1 
+ << interval3 >> : -6.8 to -4.7
+
+
