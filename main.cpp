@@ -56,6 +56,7 @@ public:
     point_t right() const { return m_right;}
     int cover_red() const { return m_covering_red.size();}
     int cover_blue() const { return m_covering_blue.size();}
+    int gain() const { return cover_red()-cover_blue();}
     void print(std::ostream& os) {
         os << m_left << " to " << m_right << std::endl << "\t\t";
         for(int i=0; i<m_covering_red.size(); i++) {
@@ -90,7 +91,22 @@ bool is_in(point_t p, interval_t I) {
     if(I.left() <= p && p <= I.right() ) return true;
     return false;
 }
+int gain_interval(point_t left, point_t right, std::vector<point_t> red, std::vector<point_t> blue) {
+  int count_red = 0;
+  int count_blue = 0;
+  for(int i=0; i<red.size(); i++) {
+    if(left <= red[i] && red[i] <= right) {
+      count_red += 1;
+    }
+  }
+  for(int i=0; i<blue.size(); i++) {
+    if(left <= blue[i] && blue[i] <= right) {
+      count_blue += 1;
+    }
+  }
 
+  return count_red - count_blue;
+}
 
 int main(void) {
 
@@ -142,24 +158,70 @@ int main(void) {
         }
     }
 
-
     //COMPUTE
-    stack<interval_t> dp[size_interval][red.size()+1];
-    for(int j=0; j<red.size()+1; j++) {
+    int K = 10;
+    int f[size_interval][K+1];
+    int LA[size_interval][K+1];//for last added interval's index
+    for(int i=0; i<size_interval; i++) {
+      for(int j=0; j<K+1; j++) {
+        f[i][j] = 0;
+        LA[i][j] = -1;
+        //-1 : NULL
+      }
+    }
+    //initialization for array f and LA
+    for(int j=0; j<K+1; j++) {
         int score = interval[0].cover_red() - interval[0].cover_blue();
-        if(j > score) {
-            dp[0][j].push_back(interval[0]);
+        if( score < j && score > 0) {
+            f[0][j] = score;
+            LA[0][j] = 0;
         } else {
-            //do nothing;
+            f[0][j] = 0;
         }
     }
 
     for(int i=1; i<size_interval; i++) {
-        for(int j=0; j<red.size()+1; j++) {
-            if() {
+        for(int j=0; j<K+1; j++) {
+          std::cout << "hooray!\t"<< "(" << i << "," << j << ")" << std::endl;
+          int index_LA = LA[i-1][j];
+          int gain_interval_i = interval[i].gain();
+            //TODO
+            if(index_LA == -1) {
+              int score = interval[i].cover_red() - interval[i].cover_blue();
+              if( score <= j && score > f[i-1][j]) {
+                  f[i][j] = score;
+                  LA[i][j] = i;
+              }
+              continue;
+            }
 
+            if(!is_in(interval[i].left(), interval[index_LA])) {
+              int nadd = f[i-1][j];
+              f[i][j] = nadd;
+              LA[i][j] = LA[i-1][j];
+
+              if( gain_interval_i <= j ) {
+                int add = f[i-1][j-gain_interval_i]+gain_interval_i;
+                if(add > nadd) {
+                  f[i][j] = add;
+                  LA[i][j] = i;
+                }
+              }
             } else {
-
+              int gain_interval_LA = interval[index_LA].gain();
+              //TODO
+              int gain_union_LA_i = gain_interval(interval[index_LA].left(),interval[i].right(), red, blue);
+              int true_gain_i = gain_union_LA_i - gain_interval_LA;//this means difference interval i\LA
+              int nadd = f[i-1][j];
+              f[i][j] = f[i-1][j];
+              LA[i][j] = LA[i-1][j];
+              if( true_gain_i <= j ) {
+                int add = f[i-1][j-true_gain_i] + true_gain_i;
+                if(add > nadd) {
+                  f[i][j] = add;
+                  LA[i][j] = i;
+                }
+              }
             }
         }
     }
@@ -173,9 +235,22 @@ int main(void) {
 
     std::cout << "<<all intervals>>" << std::endl;
     for(int i=0; i<size_interval; i++) {
-        std::cout << "\t<<interval" << i << ">> : ";
+        std::cout << "\t<<interval " << i << ">> : ";
         std::cout << interval[i] << std::endl;
     }std::cout << std::endl << std::endl;
+
+    std::cout << "K\t";
+    for(int j=0; j<K+1; j++) std::cout << j << "\t";
+    std::cout << std::endl;
+    std::cout << "i" << std::endl;
+    for(int i=0; i<size_interval; i++) {
+      std::cout << i << "\t";
+      for(int j=0; j<K+1; j++) {
+        std::cout << f[i][j] << "\t";
+      }
+      std::cout << std::endl;
+    }
+
 
 
     return 0;
